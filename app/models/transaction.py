@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from app.database import Base
@@ -41,3 +42,19 @@ class CategoryRule(Base):
     category = Column(String, nullable=False)       # e.g., 'Food & Dining'
     match_type = Column(String, default="keyword")  # e.g., 'keyword' or 'exact'
     user_id = Column(Integer, ForeignKey("users.id"))
+=======
+from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime
+from sqlalchemy.sql import func
+from app.database import Base
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("accounts.id"))
+    amount = Column(Float, nullable=False)
+    description = Column(String)
+    transaction_type = Column(String) 
+    category = Column(String)
+    transaction_date = Column(DateTime(timezone=True), server_default=func.now())
+>>>>>>> cb8739c9cc3aa7a178da3c1967b6e0798d062a28
