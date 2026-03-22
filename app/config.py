@@ -1,19 +1,23 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
-import os
 
-# This line tells Python to look for the .env file
+# Explicitly load the .env file
 load_dotenv()
 
 class Settings(BaseSettings):
-    # These names must match exactly what you wrote in the .env file
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
-    SECRET_KEY: str = os.getenv("SECRET_KEY")
-    ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+    # These fields are required; if missing in .env, the app will raise an error
+    DATABASE_URL: str
+    SECRET_KEY: str
+    
+    # These fields have default values for easier development
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # Configure Pydantic to read from .env and ignore variables not defined here
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore"  # This prevents the ValidationError when system vars exist
+    )
 
-    class Config:
-        env_file = ".env"
-
-# We create one 'settings' object to use everywhere
+# Instantiate settings once to be used throughout the application
 settings = Settings()

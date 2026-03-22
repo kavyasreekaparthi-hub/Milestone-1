@@ -1,18 +1,15 @@
-<<<<<<< HEAD
 from pydantic import BaseModel
+from typing import Optional
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-=======
-from pydantic import BaseModel
+    username: Optional[str] = None
+    email: Optional[str] = None
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
->>>>>>> cb8739c9cc3aa7a178da3c1967b6e0798d062a28
-    email: str | None = None
+# If you have a Login model, it usually lives here too:
+class LoginRequest(BaseModel):
+    username: str
+    password: str

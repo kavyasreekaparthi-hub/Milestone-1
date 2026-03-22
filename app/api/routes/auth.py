@@ -1,29 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 from jose import jwt
 from app.database import get_db
-from app.models import User
+from app.models.user import User
 from app.schemas.user import UserCreate
-# Importing both hashing and verification functions
 from app.core.security import get_password_hash, verify_password
+from app.config import settings
 
-SECRET_KEY = "your-secret-key-here" 
-ALGORITHM = "HS256"
-
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # --- Registration Endpoint ---
-@router.post("/register", status_code=201) 
+@router.post("/register", status_code=status.HTTP_201_CREATED) 
 async def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    """Registers a new user including profile details."""
-    
-    # 1. Check if user already exists
+    """Registers a new user and hashes their password."""
     exists = db.query(User).filter(User.email == user_in.email).first()
     if exists:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Email already registered"
+        )
     
-    # 2. Create new user with hashed password
     new_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
@@ -41,15 +39,46 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Handles login by verifying hashed credentials and issuing a JWT."""
+    
+    # 1. Fetch user by email
     user = db.query(User).filter(User.email == form_data.username).first()
     
-    # Secure Verification: Compares raw password with the stored hash
+    # 2. Secure Verification
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Invalid email or password"
         )
     
-    # Generate the JWT Token
-    access_token = jwt.encode({"sub": user.email}, SECRET_KEY, algorithm=ALGORITHM)
+    # 3. Generate the JWT Token
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Corrected payload syntax: Using dictionary curly braces
+    payload = {
+        "sub": str(user.id), 
+        "email": user.email,
+        "exp": expire
+    } 
+    
+    access_token = jwt.encode(
+        payload, 
+        settings.SECRET_KEY, 
+        algorithm=settings.ALGORITHM
+    )
+    
     return {"access_token": access_token, "token_type": "bearer"}
+
+# --- Milestone 4 Helper Function ---
+def get_demo_user(db: Session):
+    """
+    Helper function for Milestone 4 to provide a 'current_user' 
+    without requiring a real JWT token during testing.
+    Essential for logic-heavy services like Insights and Alerts.
+    """
+    user = db.query(User).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="No users found in database. Please register a user first."
+        )
+    return user

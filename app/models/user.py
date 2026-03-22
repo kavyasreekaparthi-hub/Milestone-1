@@ -21,20 +21,19 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # --- Intelligence Engine Relationships ---
-    # Using the full module path (app.models.filename.ClassName) solves 
-    # the "Multiple classes found" registry error.
+    # Using back_populates to explicitly link with the 'user' attribute in child models
     transactions = relationship(
         "app.models.transaction.Transaction", 
-        backref="user", 
+        back_populates="user", 
         cascade="all, delete-orphan"
     )
     rules = relationship(
         "app.models.category_rule.CategoryRule", 
-        backref="user", 
+        back_populates="user", 
         cascade="all, delete-orphan"
     )
     budgets = relationship(
         "app.models.budget.Budget", 
-        backref="user", 
+        back_populates="user", 
         cascade="all, delete-orphan"
     )
